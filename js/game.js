@@ -4,7 +4,7 @@ var game = new Phaser.Game(
     Phaser.AUTO, 'container');
 
 var TITLE = "Drop";
-var DEBUG = false;
+var DEBUG = true;
 
 var Drop = function(game) {};
 Drop.Main = function (game) {
@@ -73,10 +73,9 @@ Drop.Main.prototype =
         this.ball.body.y = this.BALL_RADIUS;
         this.ball.body.velocity.x = game.rnd.realInRange(-500, 500);
         
-        for (var y=this.PLATFORM_DISTANCE*1.5;y<game.world.height;y+=this.PLATFORM_DISTANCE) {
-            this.createPlatformLayer(y, game.world.width*this.PLATFORM_TOTAL_WIDTH_FACTOR);
-        }
     
+        this.lastY = this.PLATFORM_DISTANCE * 2;
+
         this.progressbar = this.createProgressbar();
         //game.camera.follow(this.ball, Phaser.Camera.FOLLOW_PLATFORMER);
     },
@@ -85,28 +84,34 @@ Drop.Main.prototype =
     {        
         var self = this;
 
-        if (this.ball.body.x - this.ball.width > game.world.width) {
-            this.ball.body.x = -this.ball.width;
-        } else if (this.ball.body.x+this.ball.width < 0) {
-            this.ball.body.x = game.world.width + this.ball.width;
-        }
-
+        // scrolling
+        game.camera.y += 1; //this.timer.ms * this.PLATFORM_INITIAL_SPEED + 0.5*Math.pow(this.timer.ms,2) * this.PLATFORM_SPEEDUP;
+     
+        // inputs / movement 
         this.platformGroup.forEach(function(platform) {
             if ((platform.body.y > self.ball.body.y) && (platform.body.y - self.PLATFORM_DISTANCE < self.ball.body.y)) 
             {
                 platform.body.x += game.input.activePointer.movementX * self.MOUSE_SENSITIVITY;  
-            }
+            }  
         });
         game.input.activePointer.resetMovement();
 
-        if (game.time.fps) 
-            window.document.title = game.time.fps + " FPS - Drop";
-
-
-        game.camera.y += 1; //this.timer.ms * this.PLATFORM_INITIAL_SPEED + 0.5*Math.pow(this.timer.ms,2) * this.PLATFORM_SPEEDUP;
-
+        // progress bar
         this.progressbar.updateValue(game.camera.y);
+   
+        // update platforms
+        for(var i=0; i<this.platformGroup.children;i++) {
+            var platform = this.platformGroup.children[i];
+            if (platform.body.y + platform.height/2 < game.camera.y) {
+                platform.destroy();
+            }
+        }
+        while(this.lastY < game.camera.y + game.camera.height + this.PLATFORM_HEIGHT) {
+            this.createPlatformLayer(this.lastY, game.world.width*this.PLATFORM_TOTAL_WIDTH_FACTOR);
+            this.lastY += this.PLATFORM_DISTANCE;
+        }
 
+        // check win/lose conditions
         if (this.ball.body.y + this.ball.height < game.camera.y) {
             game.state.start('GameEnd', true, false, 'Game Over.');
         } else if (this.ball.body.y + this.ball.height >= game.world.height) {
@@ -118,7 +123,10 @@ Drop.Main.prototype =
     {
         game.paused = !game.input.mouse.locked;
 
-        game.debug.text(game.time.fps || '--', 2, 14, "#ffffff");   
+        if (DEBUG) {
+            game.debug.text("FPS: " + (game.time.fps || '--'), 2, 15, "#ffffff");
+            game.debug.text("Platforms: " + this.platformGroup.total , 2, 30, "#ffffff");
+        }
     },
 
 
