@@ -1,175 +1,180 @@
 Drop.Main = function (game) {
     this.GFX_STROKE_WIDTH = 10;
 
-    this.LEVEL_HEIGHT = 1000;
-    this.LEVEL_GRAVITY = 400;
-    this.LEVEL_RESTITUTION = 0.3;
+    this.LEVEL_HEIGHT = 10000;
+    this.LEVEL_GRAVITY = 800;
 
     this.BALL_COUNT = 1;
     this.BALL_RADIUS = 20;
 
-    this.GAP_WIDTH = 60;
+    this.GAP_WIDTH = 80;
 
     this.PLATFORM_HEIGHT = 30;
     this.PLATFORM_DISTANCE = 100;
-    this.PLATFORM_MIN_WIDTH = 50;
-    this.PLATFORM_MAX_WIDTH = 300;
 
-    this.PLATFORM_SPEED = 10;
-    this.PLATFORM_DAMPING = 0.9;
+    this.PLATFORM_SIZE_INITIAL = 200;
+    this.PLATFORM_SIZE_SPEEDUP = 5;
+
+    this.PLATFORM_TOTAL_WIDTH_FACTOR = 2;
+
+    this.PLATFORM_SPEED_INITIAL = 80;
+    this.PLATFORM_SPEED_SPEEDUP = 1;
+
+    this.MOUSE_SENSITIVITY = 0.3;
+
+    this.game = game;
 };
-Drop.MainLoop.prototype = 
+Drop.Main.prototype = 
 {  
     preload: function()
     {
-        game.time.advancedTiming = true;
+        if (DEBUG) {
+            this.game.time.advancedTiming = true;
+        }
+
+        this.game.load.audio('music', ['media/music.ogg', 'media/music.mp3', 'media/music.xm', 'media/music.wav']);
+        this.game.load.audio('pong', ['media/pong.ogg', 'media/music.mp3', 'media/music.xm', 'media/music.wav']);
     },
 
     create: function()
-    {            
-        game.rnd.sow([5]);
-
-        game.stage.backgroundColor = '#F3EDDF';
-        game.world.setBounds(0, 0, game.width, this.LEVEL_HEIGHT);
-
-        game.physics.startSystem(Phaser.Physics.P2JS);
-        game.physics.p2.gravity.y = this.LEVEL_GRAVITY;
-        game.physics.p2.restitution = this.LEVEL_RESTITUTION;
-        game.physics.p2.applyDamping = true;
-
-        game.physics.p2.updateBoundsCollisionGroup();
-
-        this.cursorKeys = game.input.keyboard.createCursorKeys();
-    
-        this.platformCollisionGroup = game.physics.p2.createCollisionGroup();
-        this.ballCollisionGroup = game.physics.p2.createCollisionGroup();
-
-        this.platformGroup = game.add.group();
-        this.platformGroup.enableBody = true;
-        this.platformGroup.physicsBodyType = Phaser.Physics.P2JS;
-
-        this.ballGroup = game.add.group();
-        this.ballGroup.enableBody = true;
-        this.ballGroup.physicsBodyType = Phaser.Physics.P2JS;
-
-        this.ball = this.createBall(this.BALL_RADIUS);
-        this.ball.body.x = game.rnd.realInRange(0, game.world.width);
-        this.ball.body.y = this.BALL_RADIUS;
-        this.ball.body.velocity.x = game.rnd.realInRange(-500, 500);
+    {       
+        //this.game.rnd.sow([5]);
         
-        for (var y=this.PLATFORM_DISTANCE*1.5;y<game.world.height;y+=this.PLATFORM_DISTANCE) {
-            this.createPlatformLayer(y);
-        }
+        this.game.stage.backgroundColor = '#F3EDDF';
+        this.game.world.setBounds(0, 0, this.game.width, this.LEVEL_HEIGHT);
 
-        //game.camera.follow(this.ball, Phaser.Camera.FOLLOW_PLATFORMER);
+        this.game.sound.play('music', 0.9, true);
+
+        this.game.physics.startSystem(Phaser.Physics.P2JS);
+        this.game.physics.p2.gravity.y = this.LEVEL_GRAVITY;
+        this.game.physics.p2.restitution = 0.5;
+        this.game.physics.p2.applyDamping = true;
+        this.game.physics.p2.setImpactEvents(true);
+
+        this.cursorKeys = this.game.input.keyboard.createCursorKeys();
+    
+        this.platformCollisionGroup = this.game.physics.p2.createCollisionGroup();
+        this.ballCollisionGroup = this.game.physics.p2.createCollisionGroup();
+
+        this.platformLayerGroup = this.game.add.group();
+
+        this.ball = new Ball(this.BALL_RADIUS, this);
+        this.ball.body.x = this.game.world.width/2;
+        this.ball.body.y = this.BALL_RADIUS;
+        this.ball.body.velocity.y = 10;
+    
+        this.platformWidth = this.PLATFORM_SIZE_INITIAL;
+        this.ySpeed = this.PLATFORM_SPEED_INITIAL;
+        this.yPosition = 0;
+
+        this.yLast = this.PLATFORM_DISTANCE * 3;
+
+        this.ballMaterial = this.game.physics.p2.createMaterial('ballMaterial', this.ball.body);
+        this.platformMaterial = this.game.physics.p2.createMaterial('platformMaterial');
+        
+        var contactMaterial = this.game.physics.p2.createContactMaterial(this.ballMaterial, this.platformMaterial);
+        contactMaterial.friction = 0.4; 
+        contactMaterial.restitution = 0.2;
+        contactMaterial.stiffness = 1e3;
+        contactMaterial.relaxation = 1;
+        contactMaterial.frictionStiffness = 1e7;
+        contactMaterial.frictionRelaxation = 1;
+        contactMaterial.surfaceVelocity = 0.0;
+
+        this.progressBar = new VerticalProgress(this);
     },
 
     update: function()
-    {        
-        var self = this;
+    {    
+        // difficulty
+        var dt = this.game.time.physicsElapsed;
+        
+        this.ySpeed += this.PLATFORM_SPEED_SPEEDUP*dt;
+        this.platformWidth += this.PLATFORM_SIZE_SPEEDUP*dt;
 
-        if (this.ball.body.x - this.ball.width > game.world.width) {
-            this.ball.body.x = -this.ball.width;
-        } else if (this.ball.body.x+this.ball.width < 0) {
-            this.ball.body.x = game.world.width + this.ball.width;
+        // scrolling
+        this.yPosition += this.ySpeed * dt;
+        this.game.camera.y = this.yPosition;
+     
+        // inputs / movement 
+
+        var dx = 0;
+        if (this.game.input.mouse.locked) {
+            dx = this.game.input.activePointer.movementX * this.MOUSE_SENSITIVITY;
+            this.game.input.activePointer.resetMovement();
+        } else {
+            var x = this.game.input.activePointer.isDown ? this.game.input.activePointer.position.x : null;
+            if (x && this.lastX) {
+                dx = x - this.lastX;
+            }
+            this.lastX = x;
         }
 
-        var layer = this.platformGroup.filter(function(child, index, children) {
-            return (child.body.y - child.height > self.ball.body.y) 
-                && (child.body.y - child.height - self.PLATFORM_DISTANCE < self.ball.body.y);
-        });
-
-        for (var platform=layer.first; platform; platform=layer.next) {
-            platform.body.x += game.input.activePointer.movementX;
+        if (isNaN(dx)) {
+            dx = 0;
         }
-        game.input.activePointer.resetMovement();
 
-        if (game.time.fps) 
-            window.document.title = game.time.fps + " FPS - Drop";
+        if (dx != 0) {
+            for(var i=0; i<this.platformLayerGroup.children.length;i++) {
+                var layer = this.platformLayerGroup.children[i];
+                if ((layer.y > this.ball.body.y) && (layer.y - this.PLATFORM_DISTANCE < this.ball.body.y)) {
+                    layer.x += dx; 
+                }
+            }
+        }
 
-        game.camera.y += 1;
-        if (this.ball.body.y+this.ball.height < game.camera.y) {
-            console.log("GAME OVER");
+        // progress bar
+        this.progressBar.update();
+   
+        // update platforms
+        for(var i=0; i<this.platformLayerGroup.children.length;i++) {
+            var layer = this.platformLayerGroup.children[i];
+            if (layer.y + layer.height/2 < this.game.camera.y) {
+                layer.destroy(true);
+            }
+        }
+        while(this.yLast < this.game.camera.y + this.game.camera.height + this.PLATFORM_HEIGHT) {
+            var layer = new PlatformLayer(this.game.world.width*this.PLATFORM_TOTAL_WIDTH_FACTOR, this);
+            layer.y = this.yLast;
+            this.platformLayerGroup.add(layer);
+            this.yLast += this.PLATFORM_DISTANCE;
+        }
+
+        // check win/lose conditions
+        if (this.ball.body.y + this.ball.height/2 < this.game.camera.y) {
+            this.game.state.start('Menu', true, false, 'Game Over.', 'Click to try again.');
+        } else if (this.ball.body.y + this.ball.height/2 >= this.game.world.height) {
+            this.game.state.start('Menu', true, false, 'Congrats!', 'Click to go again.');
+        }
+
+        if (this.ball.body.y + this.ball.height/2 > this.game.camera.y + this.game.camera.height) {
+            this.ball.body.y = this.game.camera.y + this.game.camera.height - this.ball.height/2;
+            this.ball.body.setZeroVelocity();
+        } 
+        if (this.ball.body.x - this.ball.width/2 < 0) {
+            this.ball.body.x = this.ball.width/2;
+        } else if (this.ball.body.x + this.ball.width/2 > this.game.world.width) {
+            this.ball.body.x = this.game.world.width - this.ball.width/2;
         }
     },
 
     render: function()
     {
-        game.debug.text(game.time.fps || '--', 2, 14, "#ffffff");   
-    },
+        //this.game.paused = ! (this.game.device.touch || this.game.input.mouse.locked);
 
-
-    // #################
-
-    createBall: function(radius) 
-    {
-        var graphics = game.add.bitmapData(2*radius, 2*radius);
-        graphics.ctx.arc(radius, radius, radius-this.GFX_STROKE_WIDTH/2, 0, 2*Math.PI, false);
-        graphics.ctx.fillStyle = "#F1AB53";
-        graphics.ctx.fill();
-        graphics.ctx.lineWidth = this.GFX_STROKE_WIDTH;
-        graphics.ctx.strokeStyle = "#D74641";
-        graphics.ctx.stroke();
-
-        var sprite = this.ballGroup.create(0, 0, graphics);
-
-        game.physics.p2.enable(sprite, DEBUG);
-        sprite.body.dynamic = true;
-        sprite.body.fixedRotation = true;
-        sprite.body.collideWorldBounds = true;
-        sprite.body.setCircle(radius);
-        sprite.body.setCollisionGroup(this.ballCollisionGroup);
-     
-        //sprite.body.setCircle(radius);
-
-        sprite.body.collides(this.platformCollisionGroup);
-        sprite.body.collides(this.ballCollisionGroup);
-
-        return sprite;
-    },
-
-    createPlatform: function(width) 
-    {   
-        var graphics = game.add.bitmapData(width, this.PLATFORM_HEIGHT);
-        graphics.ctx.rect(0, 0, width, this.PLATFORM_HEIGHT);
-        graphics.ctx.fillStyle = "#252122";
-        graphics.ctx.fill();
-        graphics.ctx.lineWidth = this.GFX_STROKE_WIDTH;
-        graphics.ctx.strokeStyle = "#252122";
-        graphics.ctx.stroke();
-
-        var sprite = this.platformGroup.create(0, 0, graphics);
-
-        game.physics.p2.enable(sprite, DEBUG);
-        sprite.body.kinematic = true;
-        sprite.body.fixedRotation = true;
-        sprite.body.collideWorldBounds = false;
-        sprite.body.setRectangle(width, this.PLATFORM_HEIGHT);
-        sprite.body.setCollisionGroup(this.platformCollisionGroup);
-
-        sprite.body.collides(this.ballCollisionGroup);
-
-
-        return sprite;
-    },
-
-    createPlatformLayer: function(y)
-    {
-        var x = 0;
-        while (x < game.world.width) 
-        {
-            var width = game.rnd.realInRange(this.PLATFORM_MIN_WIDTH, this.PLATFORM_MAX_WIDTH);
-            var restWidth = game.world.width - (x + width + this.GAP_WIDTH);
-            if (restWidth < this.PLATFORM_MIN_WIDTH) {
-                width = game.world.width - x;
-            }
-
-            var platform = this.createPlatform(width);
-            platform.body.x = x + width/2; // anchor on physics.p2 objects is fixed to 0.5
-            platform.body.y = y;
-    
-            x += (width + this.GAP_WIDTH);
+        if (DEBUG) {
+            this.game.debug.text("FPS: " + (this.game.time.fps || '--'), 2, 15, "#ffffff");
+            this.game.debug.text("Layers: " + this.platformLayerGroup.total , 2, 30, "#ffffff");
         }
     },
+
+    resize: function(width, height)
+    {
+        this.progressBar.resize(width, height);
+        this.game.physics.p2.updateBoundsCollisionGroup();
+    },
+
+    shutdown: function() {
+        this.game.sound.stopAll();
+    }
 }
-game.state.add('Main', Drop.Main);
