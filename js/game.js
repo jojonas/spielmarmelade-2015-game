@@ -14,7 +14,3 @@ function runGame() {
                 TITLE, "Click to begin.\nAllow your browser to capture the mouse.");
     
 }
-
-window.onerror = function(message, file, line) {
-    alert("Error! " + file + ":" + line + " " + message);
-}
