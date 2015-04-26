@@ -43,51 +43,13 @@ Drop.Menu.prototype =
 
 
         this.game.stage.backgroundColor = '#F3EDDF';
-        var horizon = this.game.height*0.6;
 
-        if (this.graphics) 
-            this.graphics.destroy();
-        this.graphics = this.game.add.graphics(0, 0);
-        this.graphics.beginFill(0x252122);
-        this.graphics.drawRect(0, horizon, this.game.width, this.game.height - horizon);
-        this.graphics.endFill();
-
-        if (this.bottomText)
-            this.bottomText.destroy();
-        var bottomMask = this.game.add.graphics(0, 0);
-        bottomMask.beginFill(0xFFFFFF);
-        bottomMask.drawRect(0, 0, this.game.width, horizon);
-        bottomMask.endFill();
-        this.bottomText = this.drawText();
-        this.bottomText.mask = bottomMask;
-        this.bottomText.fill = "#252122";
-
-        if (this.topMask)
-            this.topMask.destroy();
-        var topMask = this.game.add.graphics(0, 0);
-        topMask.beginFill(0xFFFFFF);
-        topMask.drawRect(0, horizon, this.game.width, this.game.height - horizon);
-        topMask.endFill();
-        this.topText = this.drawText();
-        this.topText.fill = "#F3EDDF";
-        this.topText.mask = topMask;
-
-        if (this.instructions)
-            this.instructions.destroy();
-        this.instructions = this.game.add.text(this.game.width/2, this.game.height*0.8, this.subtext, 
-        {
-            fill: "#F3EDDF",
-            align: "center",
-            fontSize: 30 / (this.game.width/1300),
-            font: "Open Sans",
-        });
-        this.instructions.fixedToCamera = true;
-        this.instructions.anchor.set(0.5);
+        this.resize(this.game.width, this.game.height);
     },
 
-    drawText: function() {
-        var text = this.game.add.text(this.game.width/2, this.game.height*0.4, this.text, {
-            fontSize: 200 / (this.game.width/1300),
+    drawText: function(width, height) {
+        var text = this.game.add.text(width/2, height*0.4, this.text, {
+            fontSize: 200 * (width/1300),
             align: "center",
             font: "Open Sans",
             fontWeight: "bold",
@@ -103,8 +65,53 @@ Drop.Menu.prototype =
         }  
     },
 
-    resize: function(height, width) {
-        this.create();
+    resize: function(width, height) {
+        var horizon = height*0.6;
+
+        if (this.graphics) 
+            this.graphics.destroy();
+        this.graphics = this.game.add.graphics(0, 0);
+        this.graphics.beginFill(0x252122);
+        this.graphics.drawRect(0, horizon, width, height - horizon);
+        this.graphics.endFill();
+
+        if (this.bottomMask)
+            this.bottomMask.destroy();
+        this.bottomMask = this.game.add.graphics(0, 0);
+        this.bottomMask.beginFill(0xFFFFFF);
+        this.bottomMask.drawRect(0, 0, width, horizon);
+        this.bottomMask.endFill();
+
+        if (this.bottomText)
+            this.bottomText.destroy();
+        this.bottomText = this.drawText(width, height);
+        this.bottomText.mask = this.bottomMask;
+        this.bottomText.fill = "#252122";
+
+        if (this.topMask)
+            this.topMask.destroy();
+        this.topMask = this.game.add.graphics(0, 0);
+        this.topMask.beginFill(0xFFFFFF);
+        this.topMask.drawRect(0, horizon, width, height - horizon);
+        this.topMask.endFill();
+
+        if (this.topText)
+            this.topText.destroy();
+        this.topText = this.drawText(width, height);
+        this.topText.fill = "#F3EDDF";
+        this.topText.mask = this.topMask;
+
+        if (this.instructions)
+            this.instructions.destroy();
+        this.instructions = this.game.add.text(width/2, height*0.8, this.subtext, 
+        {
+            fill: "#F3EDDF",
+            align: "center",
+            fontSize: 40 * (width/1300),
+            font: "Open Sans",
+        });
+        this.instructions.fixedToCamera = true;
+        this.instructions.anchor.set(0.5);
     },
 
     shutdown: function() 
