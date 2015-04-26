@@ -43,6 +43,7 @@ Drop.Main.prototype =
         this.game.stage.backgroundColor = '#F3EDDF';
         this.game.world.setBounds(0, 0, this.game.width, this.LEVEL_HEIGHT);
 
+        this.game.sound.stopAll();
         this.game.sound.play('music', 0.9, true);
 
         this.game.physics.startSystem(Phaser.Physics.P2JS);

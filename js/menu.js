@@ -18,7 +18,6 @@ Drop.Menu.prototype =
 
     preload: function() {
         this.game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
-
         this.game.load.audio('music', ['media/music.ogg', 'media/music.mp3', 'media/music.xm', 'media/music.wav']);
     },
 
