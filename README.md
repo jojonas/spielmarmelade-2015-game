@@ -15,8 +15,9 @@ Goal of the game is to drop a small red ball through a level of platforms. The p
 Technologies
 ------------
 
-For this game the HTML5 game framework [phaser.js](https://phaser.io/) was used. The entire project was loaded and edited in the [Chrome developer tools](https://developer.chrome.com/devtools).
-[The Music](media/music.mp3) was tracked from scratch using [MilkyTracker](http://milkytracker.org/). 
+For this game the javascript/HTML5 game framework [phaser.js](https://phaser.io/) was used. The entire project was loaded and edited in the [Chrome developer tools](https://developer.chrome.com/devtools).
+[The Music](media/music.mp3) is tracked from scratch using [MilkyTracker](http://milkytracker.org/). The ball sound is taken from [freesound](https://www.freesound.org/people/Spankous/sounds/245408/), where it was published by user [Spankous](https://www.freesound.org/people/Spankous/) under the [Creative Commons 0 license](http://creativecommons.org/publicdomain/zero/1.0/).
+
 
 Running
 -------
@@ -27,3 +28,4 @@ proposes some lightweight servers.
 
 There is currently a version hosted at [my webpage](http://download.jonaslieb.com/spielmarmelade-2015/), but this link is
 not guaranteed to be online at all times.
+

@@ -31,9 +31,6 @@ Drop.Main.prototype =
         if (DEBUG) {
             this.game.time.advancedTiming = true;
         }
-
-        this.game.load.audio('music', ['media/music.ogg', 'media/music.mp3', 'media/music.xm', 'media/music.wav']);
-        this.game.load.audio('pong', ['media/pong.ogg', 'media/music.mp3', 'media/music.xm', 'media/music.wav']);
     },
 
     create: function()
