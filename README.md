@@ -1,7 +1,7 @@
 Drop
 ====
 
-A game made by Jonas Lieb on 25.-26.04.2015 at the "Spielmarmelade 2015" 48h game
+A game made by [Jonas Lieb](http://jonaslieb.com) on 25.-26.04.2015 at the "Spielmarmelade 2015" 48h game
 jam in Aachen.
 
 The Game
