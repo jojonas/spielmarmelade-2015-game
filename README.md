@@ -15,7 +15,7 @@ Goal of the game is to drop a small red ball through a level of platforms. The p
 Technologies
 ------------
 
-For this game the javascript/HTML5 game framework [phaser.js](https://phaser.io/) was used. The entire project was loaded and edited in the [Chrome developer tools](https://developer.chrome.com/devtools).
+For this game the javascript/HTML5 game framework [Phaser](https://phaser.io/) was used. The entire project was loaded and edited in the [Chrome developer tools](https://developer.chrome.com/devtools).
 [The Music](media/music.mp3) is tracked from scratch using [MilkyTracker](http://milkytracker.org/). The ball sound is taken from [freesound](https://www.freesound.org/people/Spankous/sounds/245408/), where it was published by user [Spankous](https://www.freesound.org/people/Spankous/) under the [Creative Commons 0 license](http://creativecommons.org/publicdomain/zero/1.0/).
 
 
